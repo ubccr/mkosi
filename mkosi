@@ -1684,12 +1684,20 @@ def invoke_dnf_or_yum(args: CommandLineArguments,
 def install_centos(args: CommandLineArguments, workspace: str, do_run_build_script: bool) -> None:
     masked = disable_kernel_install(args, workspace)
 
+    os_repo = 'os'
+    updates_repo = 'updates'
+    if args.release == '8':
+        os_repo = 'BaseOS'
+        updates_repo = 'AppStream'
+
     epel_release = args.release.split('.')[0]
     gpg_key = f"/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-{args.release}"
     epel_gpg_key = f"/etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-{epel_release}"
 
     if os.path.exists(gpg_key):
         gpg_key = f'file://{gpg_key}'
+    elif args.release == '8' and os.path.exists('/etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial'):
+        gpg_key = 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial'
     else:
         gpg_key = f'https://www.centos.org/keys/RPM-GPG-KEY-CentOS-{args.release}'
 
@@ -1699,8 +1707,8 @@ def install_centos(args: CommandLineArguments, workspace: str, do_run_build_scri
         epel_gpg_key = f'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{epel_release}'
 
     if args.mirror:
-        release_url = f"baseurl={args.mirror}/centos/{args.release}/os/x86_64"
-        updates_url = f"baseurl={args.mirror}/centos/{args.release}/updates/x86_64/"
+        release_url = f"mirrorlist=http://mirrorlist.centos.org/?release={args.release}&arch=x86_64&repo={os_repo}"
+        updates_url = f"mirrorlist=http://mirrorlist.centos.org/?release={args.release}&arch=x86_64&repo={updates_repo}"
         extras_url = f"baseurl={args.mirror}/centos/{args.release}/extras/x86_64/"
         centosplus_url = f"baseurl={args.mirror}/centos/{args.release}/centosplus/x86_64/"
         epel_url = f"baseurl={args.mirror}/epel/{epel_release}/x86_64/"
@@ -1710,6 +1718,8 @@ def install_centos(args: CommandLineArguments, workspace: str, do_run_build_scri
         extras_url = f"mirrorlist=http://mirrorlist.centos.org/?release={args.release}&arch=x86_64&repo=extras"
         centosplus_url = f"mirrorlist=http://mirrorlist.centos.org/?release={args.release}&arch=x86_64&repo=centosplus"
         epel_url = f"baseurl=http://download.fedoraproject.org/pub/epel/{epel_release}/x86_64"
+        if epel_release == "8":
+            epel_url = f"baseurl=https://download.fedoraproject.org/pub/epel/8/Everything/x86_64"
 
     config_file = os.path.join(workspace, "yum.conf")
     with open(config_file, "w") as f:
@@ -1741,7 +1751,7 @@ gpgkey={gpg_key}
             f.write(f"""\
 
 [epel]
-name=Extra Packages for Enterprise Linux 7 - $basearch
+name=Extra Packages for Enterprise Linux {epel_release} - $basearch
 {epel_url}
 gpgkey={epel_gpg_key}
 
