@@ -1707,11 +1707,13 @@ def install_centos(args: CommandLineArguments, workspace: str, do_run_build_scri
         epel_gpg_key = f'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-{epel_release}'
 
     if args.mirror:
-        release_url = f"mirrorlist=http://mirrorlist.centos.org/?release={args.release}&arch=x86_64&repo={os_repo}"
-        updates_url = f"mirrorlist=http://mirrorlist.centos.org/?release={args.release}&arch=x86_64&repo={updates_repo}"
+        release_url = f"baseurl={args.mirror}/centos/{args.release}/{os_repo}/x86_64"
+        updates_url = f"baseurl={args.mirror}/centos/{args.release}/{updates_repo}/x86_64/"
         extras_url = f"baseurl={args.mirror}/centos/{args.release}/extras/x86_64/"
         centosplus_url = f"baseurl={args.mirror}/centos/{args.release}/centosplus/x86_64/"
         epel_url = f"baseurl={args.mirror}/epel/{epel_release}/x86_64/"
+        if epel_release == "8":
+            epel_url = f"baseurl={args.mirror}/epel/8/Everything/x86_64"
     else:
         release_url = f"mirrorlist=http://mirrorlist.centos.org/?release={args.release}&arch=x86_64&repo={os_repo}"
         updates_url = f"mirrorlist=http://mirrorlist.centos.org/?release={args.release}&arch=x86_64&repo={updates_repo}"
